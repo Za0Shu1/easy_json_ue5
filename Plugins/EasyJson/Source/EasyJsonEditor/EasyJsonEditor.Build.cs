@@ -2,9 +2,9 @@
 
 using UnrealBuildTool;
 
-public class EasyJson : ModuleRules
+public class EasyJsonEditor : ModuleRules
 {
-	public EasyJson(ReadOnlyTargetRules Target) : base(Target)
+	public EasyJsonEditor(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 		
@@ -38,6 +38,13 @@ public class EasyJson : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
+				"LevelEditor",//Extent Editor
+				"Projects",// GetPluginInfomation
+				"UnrealEd",// UStructFactory
+				"ContentBrowser",
+				"ContentBrowserData",
+				"AssetRegistry",
+				"BlueprintGraph",//EdGraphSchema_K2
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

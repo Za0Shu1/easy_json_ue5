@@ -5,11 +5,19 @@
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
 
-class FEasyJsonModule : public IModuleInterface
+class FEasyJsonEditorModule : public IModuleInterface
 {
 public:
 
 	/** IModuleInterface implementation */
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
+
+	void AddToolbarExtension(FToolBarBuilder& Builder);
+	void OnImportButtonClick();
+
+
+	void CreateCustomStruct();
+private:
+	TSharedPtr<class FUICommandList> PluginCommands;
 };
