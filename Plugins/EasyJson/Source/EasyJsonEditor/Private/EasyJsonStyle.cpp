@@ -1,4 +1,4 @@
-// // Copyright 2023, liangbochao. All Rights Reserved.
+// Copyright 2023, liangbochao. All Rights Reserved.
 
 #include "EasyJsonStyle.h"
 #include "EasyJsonEditor.h"

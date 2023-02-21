@@ -4,6 +4,7 @@
 
 #include "EasyJsonCommand.h"
 #include "LevelEditor.h"
+#include "CreateAssets/CreateStructProxy.h"
 
 #define LOCTEXT_NAMESPACE "FEasyJsonEditorModule"
 
@@ -51,6 +52,11 @@ void FEasyJsonEditorModule::AddToolbarExtension(FToolBarBuilder& Builder)
 void FEasyJsonEditorModule::OnImportButtonClick()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Import Button Click"));
+	UCreateStructProxy* CreateStructProxy = NewObject<UCreateStructProxy>();
+	CreateStructProxy->AddToRoot();
+	CreateStructProxy->Init();
+	CreateStructProxy->DoImport();
+	CreateStructProxy->RemoveFromRoot();
 }
 
 void FEasyJsonEditorModule::CreateCustomStruct()

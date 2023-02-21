@@ -38,6 +38,10 @@ public class EasyJson : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
+				"JsonUtilities",
+				"Json",
+				"BlueprintGraph",//EdGraphSchema_K2
+				"UnrealEd",// UStructFactory
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
