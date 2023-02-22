@@ -34,7 +34,24 @@ struct FStructDescription
 	
 public:
 	UPROPERTY()
-		bool bAlreadyCreated = false;
+		FName AssetName;
+
+	UPROPERTY()
+		FString PackageName;
+
+	UPROPERTY()
+		TMap<FString,FEdGraphPinType> VariableInfo;
+	
+	UPROPERTY()
+		bool bAlreadyCreated;
+
+	FStructDescription() :
+		AssetName(FName("")),
+		PackageName(""),
+		VariableInfo({}),
+		bAlreadyCreated(false)
+	{
+	}
 };
 
 UCLASS()

@@ -2,5 +2,11 @@
     "PluginVersion" : 1,
     "VersionName": "1.0",
     "CreateBy": "liangbochao",
-    "DocsURL":""
+    "DocsURL": 
+    {   
+        "PluginVersion" : 1.1,
+        "VersionName": "1.1",
+        "CreateBy": "liangbochao",
+        "Other": true
+    }
 }

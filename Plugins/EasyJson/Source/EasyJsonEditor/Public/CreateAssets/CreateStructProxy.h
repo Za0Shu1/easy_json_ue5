@@ -3,7 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/NoExportTypes.h"
+#include "Chaos/AABB.h"
+#include "Chaos/AABB.h"
+#include "Common/EasyJsonTypes.h"
+#include "Serialization/JsonTypes.h"
 #include "CreateStructProxy.generated.h"
 
 /**
@@ -20,7 +23,13 @@ class EASYJSONEDITOR_API UCreateStructProxy : public UObject
 public:
 	void Init(FString JsonFilePath = "");
 	void DoImport();
+	bool CreateStructFromJsonObject(FString StructName, const TSharedPtr<FJsonObject>& InObject, FSoftObjectPath& OutStructSoftPath);
+	bool GenerateStructFromDescription(FStructDescription& InDescription, FSoftObjectPath& CreatedStructSoftPath);
 
 private:
 	FString OriginJsonString = "";
+	FString JsonFileName = "Simple";
+	
+	static FString GetJsonTypeNameString(EJson JsonType);
+	bool DeleteAssetByPackageName(FString PackageName) const;
 };

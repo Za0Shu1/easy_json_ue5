@@ -40,6 +40,7 @@ public class EasyJsonEditor : ModuleRules
 				"SlateCore",
 				"LevelEditor",//Extent Editor
 				"Projects",// GetPluginInfomation
+				"UnrealEd",
 				"ContentBrowser",
 				"ContentBrowserData",
 				"AssetRegistry",

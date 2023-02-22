@@ -63,6 +63,14 @@ bool UEasyJsonUtils::GenerateStructPinType( FEdGraphPinType& OutPinType, EStruct
 		PinSubCategoryObject = TBaseStructure<FTransform>::Get();
 		break;
 	case EStructPinType::PC_Struct:
+		PinCategory = FName("struct");
+		PinSubCategoryObject = GetObjectFromPath(SubStructPath);
+		if(!PinSubCategoryObject)
+		{
+			UE_LOG(LogEasyJsonUtils, Error, TEXT("Can not construct struct pin without PinSubCategoryObject"));
+			return false;
+		}
+		break;
 	case EStructPinType::PC_Enum:
 		PinCategory = FName("byte");
 		PinSubCategoryObject = GetObjectFromPath(SubStructPath);
