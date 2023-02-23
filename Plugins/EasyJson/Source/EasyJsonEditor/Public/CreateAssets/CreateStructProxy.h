@@ -22,8 +22,9 @@ class EASYJSONEDITOR_API UCreateStructProxy : public UObject
 
 public:
 	void Init(FString JsonFilePath = "");
-	void DoImport();
+	virtual void DoImport();
 	bool CreateStructFromJsonObject(FString StructName, const TSharedPtr<FJsonObject>& InObject, FSoftObjectPath& OutStructSoftPath);
+	bool GeneratePinFromJsonValueType(TTuple<FString,TSharedPtr<FJsonValue>> InAttribute,EStructPinType& OutPinType,EPinContainerType& OutContainerType,FName& OutSubStructPath);
 	bool GenerateStructFromDescription(FStructDescription& InDescription, FSoftObjectPath& CreatedStructSoftPath);
 
 private:

@@ -51,7 +51,6 @@ void FEasyJsonEditorModule::AddToolbarExtension(FToolBarBuilder& Builder)
 
 void FEasyJsonEditorModule::OnImportButtonClick()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Import Button Click"));
 	UCreateStructProxy* CreateStructProxy = NewObject<UCreateStructProxy>();
 	CreateStructProxy->AddToRoot();
 	CreateStructProxy->Init();

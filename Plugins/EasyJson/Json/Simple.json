@@ -1,12 +1,27 @@
 {
-    "PluginVersion" : 1,
-    "VersionName": "1.0",
-    "CreateBy": "liangbochao",
-    "DocsURL": 
-    {   
-        "PluginVersion" : 1.1,
-        "VersionName": "1.1",
-        "CreateBy": "liangbochao",
-        "Other": true
-    }
+    "TestNumber" : 1,
+    "TestString": "liangbochao",
+    "TeseBoolean": false,
+    "TestObject":
+    {
+        "SubNumber": 2,
+        "SubString" : "Sub Struct string.",
+        "SubBoolean" : true,
+        "SubObject": {
+            "Info": "Json Depth 3",
+            "Depth": 3
+        },
+        "SubArray": ["str1","str2","str3"]
+    },
+    "TestArray": [1000,1001,1002],
+    "TestArrayObject": [
+        {
+            "Description": "this is an json array of object",
+            "ArrayObjectNumber": 4
+        }
+    ],
+    "Test2DArray": [
+        [1,2,3],
+        [4,5,6]
+    ]
 }

@@ -208,7 +208,7 @@ bool UEasyJsonUtils::GenericEasySerialize(const FStructProperty* InStruct, FStri
 	}
 
 	// convert struct to json string
-	//@ TODO: Using this method will cause a problem that those variable name first char will force changed to lowcase
+	//@ TODO: Using this method will cause a problem that those variable name first char will force changed to lowercase,you can redefine this method specific your own variable name.
 	return FJsonObjectConverter::UStructToJsonObjectString(InStruct->Struct,StructPtr,OutJsonString);
 }
 

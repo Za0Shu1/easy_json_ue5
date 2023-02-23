@@ -32,6 +32,7 @@
 // PLUGIN HEADER
 #include "Common/EasyJsonTypes.h"
 #include "Common/EasyJsonUtils.h"
+#include "JsonUtils/JsonPointer.h"
 
 DEFINE_LOG_CATEGORY(LogEasyJsonCreateAssets);
 
@@ -114,10 +115,6 @@ void UCreateStructProxy::DoImport()
 	{
 		UE_LOG(LogEasyJsonCreateAssets, Error, TEXT("Can not create structs asset from json object."));
 	}
-	else
-	{
-		UE_LOG(LogEasyJsonCreateAssets, Log, TEXT("Struct created at : %s."),*StructSoftPath.ToString());
-	}
 }
 
 // this is a recurrence method, we can generate struct recursively
@@ -140,71 +137,110 @@ bool UCreateStructProxy::CreateStructFromJsonObject(FString StructName, const TS
 		FString VariableName = attribute.Key;
 		UE_LOG(LogEasyJsonCreateAssets, Log, TEXT("Struct{%s}, Variable{%s}, Type{%s}."),*StructName,*VariableName,*GetJsonTypeNameString(attribute.Value->Type));
 
-		switch (attribute.Value->Type)
-		{
-		// simply generate FString Pin for None and Null Type
-		case EJson::None :
-		case EJson::Null :
-		case EJson::String :
-			{
-				FEdGraphPinType Pin;
-				if(UEasyJsonUtils::GenerateStructPinType(Pin,EStructPinType::PC_String,FName(),EPinContainerType::None,FEdGraphTerminalType()))
-				{
-					StructInfo.VariableInfo.Add(attribute.Key,Pin);
-				}
-			}
-			break;
-		case EJson::Number :
-			{
-				FEdGraphPinType Pin;
-				if(UEasyJsonUtils::GenerateStructPinType(Pin,EStructPinType::PC_Float,FName(),EPinContainerType::None,FEdGraphTerminalType()))
-				{
-					StructInfo.VariableInfo.Add(attribute.Key,Pin);
-				}
-			}
-			break;
+		// calc pin type
+		FEdGraphPinType Pin;
+		EStructPinType PinMainType = EStructPinType::PC_String;
+		FName SubStructPath = FName();
+		EPinContainerType ContainerType = EPinContainerType::None;
+		FEdGraphTerminalType TerminalType = FEdGraphTerminalType();
 		
-		case EJson::Boolean:
+		if(!GeneratePinFromJsonValueType(attribute,PinMainType,ContainerType,SubStructPath))
+		{
+			return false;
+		}
+		else
+		{
+			if(UEasyJsonUtils::GenerateStructPinType(Pin,PinMainType,SubStructPath,ContainerType,TerminalType))
 			{
-				FEdGraphPinType Pin;
-				if(UEasyJsonUtils::GenerateStructPinType(Pin,EStructPinType::PC_Boolean,FName(),EPinContainerType::None,FEdGraphTerminalType()))
-				{
-					StructInfo.VariableInfo.Add(attribute.Key,Pin);
-				}
+				StructInfo.VariableInfo.Add(VariableName,Pin);
 			}
-			break;
-		case EJson::Array:
-			{
-				// @ TODO: Generate variables or structs for json array
-			}
-			break;
-		case EJson::Object :
-			{
-				// if attribute is a json object,we should generate another struct for it
-				TSharedPtr<FJsonObject> ChildObj =  attribute.Value->AsObject();
-				FSoftObjectPath SubStructSoftPath;
-				if(CreateStructFromJsonObject(attribute.Key,ChildObj,SubStructSoftPath))
-				{
-					FEdGraphPinType Pin;
-					if(UEasyJsonUtils::GenerateStructPinType(Pin,EStructPinType::PC_Struct,SubStructSoftPath.ToFName(),EPinContainerType::None,FEdGraphTerminalType()))
-					{
-						StructInfo.VariableInfo.Add(attribute.Key,Pin);
-					}
-				}
-				else
-				{
-					return false;
-				}
-			}
-			break;
-		default:
-			break;
 		}
 	}
-
 	return GenerateStructFromDescription(StructInfo,OutStructSoftPath);
 }
 
+bool UCreateStructProxy::GeneratePinFromJsonValueType(TTuple<FString, TSharedPtr<FJsonValue>> InAttribute,
+	EStructPinType& OutPinType, EPinContainerType& OutContainerType, FName& OutSubStructPath)
+{
+	OutPinType = EStructPinType::PC_String;
+	OutSubStructPath = FName();
+	OutContainerType = EPinContainerType::None;
+	
+	switch (InAttribute.Value->Type)
+	{
+		// just using default pin
+	case EJson::None:
+	case EJson::Null:
+	case EJson::String:
+		break;
+	case EJson::Number:
+		OutPinType = EStructPinType::PC_Float;
+		break;
+	case EJson::Boolean:
+		OutPinType = EStructPinType::PC_Boolean;
+		break;
+	case EJson::Array:
+		{
+			OutContainerType = EPinContainerType::Array;
+			TArray<TSharedPtr<FJsonValue>> JsonValues =  InAttribute.Value->AsArray();
+			if(JsonValues.Num() <= 0)
+			{
+				UE_LOG(LogEasyJsonCreateAssets, Warning, TEXT("There is a json value type is Array, but don not have any variable,can not decide to use which pintype."));
+			}
+			TSharedPtr<FJsonValue> TempValue = JsonValues[0];
+
+			// check if values is a Multidimensional array
+			if(TempValue->Type == EJson::Array)
+			{
+				const FString DisplayLog = "If you want use multidimensional array json, you can not use the default method FJsonObjectConverter::JsonObjectToUStruct, \n"\
+				"because this method JsonValueToFPropertyWithContainer in JsonObjectConverter will check the ArrayDim value. If ArrayDim > 1, values will be ignored. \n"\
+				"There are some solutions for this situation: \n"\
+				"\t1. Reconstruct your json structure, avoid using Multidimensional array; \n"\
+				"\t2. Define a custom structrue,and Define a method same like FJsonObjectConverter::JsonObjectToUStruct, deserialize json by yourself.";
+				
+				UE_LOG(LogEasyJsonCreateAssets, Warning, TEXT("Value type is multidimensional array,do not support yet. Simply using string pin."));
+				UE_LOG(LogEasyJsonCreateAssets, Warning, TEXT("%s"),*DisplayLog);
+				OutPinType = EStructPinType::PC_String;
+				OutContainerType = EPinContainerType::None;
+			}
+			else
+			{
+				FString TempKey = InAttribute.Key + "_Item";
+				TTuple<FString, TSharedPtr<FJsonValue>> TempAttribute(TempKey,TempValue);
+
+				EStructPinType TempPinType;
+				FName TempSubStructPath;
+				EPinContainerType TempContainerType;
+				if(GeneratePinFromJsonValueType(TempAttribute,TempPinType,TempContainerType,TempSubStructPath))
+				{
+					OutPinType = TempPinType;
+					OutSubStructPath = TempSubStructPath;
+				}
+				else
+				{
+					UE_LOG(LogEasyJsonCreateAssets, Warning, TEXT("Can not generate correct pintype for %s . "),*InAttribute.Key);
+				}
+			}
+		}
+		break;
+	case EJson::Object:
+		{
+			TSharedPtr<FJsonObject> ChildObj =  InAttribute.Value->AsObject();
+			FSoftObjectPath SubStructSoftPath;
+			if(CreateStructFromJsonObject(InAttribute.Key,ChildObj,SubStructSoftPath))
+			{
+				OutPinType = EStructPinType::PC_Struct;
+				OutSubStructPath = *SubStructSoftPath.ToString();
+			}
+			else
+			{
+				return false;
+			}
+		}
+		break;
+	}
+	return true;
+}
 
 
 bool UCreateStructProxy::GenerateStructFromDescription(FStructDescription& InDescription, FSoftObjectPath& CreatedStructSoftPath)
@@ -282,6 +318,7 @@ bool UCreateStructProxy::GenerateStructFromDescription(FStructDescription& InDes
 		
 		InDescription.bAlreadyCreated = true;
 		CreatedStructSoftPath = FSoftObjectPath(OutStruct);
+		UE_LOG(LogEasyJsonCreateAssets, Warning, TEXT("Struct{%s} created at : %s."),*InDescription.AssetName.ToString(),*CreatedStructSoftPath.ToString());
 		return true;
 	}
 	return false;
