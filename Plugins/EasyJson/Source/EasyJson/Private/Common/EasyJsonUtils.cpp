@@ -3,10 +3,12 @@
 
 #include "Common/EasyJsonUtils.h"
 
+#include "DesktopPlatformModule.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Engine/UserDefinedStruct.h"
 #include "Kismet2/BlueprintEditorUtils.h"
 #include "EdGraphSchema_K2.h"
+#include "IDesktopPlatform.h"
 #include "JsonObjectConverter.h"
 #include "UObject/UnrealTypePrivate.h"
 
@@ -225,6 +227,49 @@ bool UEasyJsonUtils::EasySerialize(const int32& InStruct,FString& OutJsonString)
 	check(0);
 	return false;
 }
+
+TArray<FString> UEasyJsonUtils::SaveFileDialog(const FString& DialogTitle, const FString& DefaultPath,
+	const FString& DefaultFile, const FString& FileTypes, uint32 Flags)
+{
+	IDesktopPlatform* DesktopPlatform = FDesktopPlatformModule::Get();
+
+	TArray<FString> SaveFilenames;
+	if (DesktopPlatform)
+	{
+		const bool bOpened = DesktopPlatform->SaveFileDialog(
+			nullptr,
+			DialogTitle,
+			DefaultPath,
+			DefaultFile,
+			FileTypes,
+			Flags,
+			SaveFilenames
+		);
+	}
+	return SaveFilenames;
+}
+
+TArray<FString> UEasyJsonUtils::OpenFileDialog(const FString& DialogTitle, const FString& DefaultPath,
+	const FString& DefaultFile, const FString& FileTypes, uint32 Flags)
+{
+	IDesktopPlatform* DesktopPlatform = FDesktopPlatformModule::Get();
+	TArray<FString> SelectedFiles;
+	
+	if (DesktopPlatform)
+	{
+		const bool bOpened = DesktopPlatform->OpenFileDialog(
+			nullptr,
+			DialogTitle,
+			DefaultPath,
+			DefaultFile,
+			FileTypes,
+			Flags,
+			SelectedFiles
+		);
+	}
+	return SelectedFiles;
+}
+
 
 DEFINE_FUNCTION(UEasyJsonUtils::execEasyDeserialize)
 {

@@ -4,9 +4,12 @@
 
 #include "EasyJsonCommand.h"
 #include "LevelEditor.h"
+#include "SEasyJsonImportWidget.h"
 #include "CreateAssets/CreateStructProxy.h"
 
 #define LOCTEXT_NAMESPACE "FEasyJsonEditorModule"
+
+static const FName EasyJsonTableName("EasyJson");
 
 void FEasyJsonEditorModule::StartupModule()
 {
@@ -51,17 +54,34 @@ void FEasyJsonEditorModule::AddToolbarExtension(FToolBarBuilder& Builder)
 
 void FEasyJsonEditorModule::OnImportButtonClick()
 {
-	UCreateStructProxy* CreateStructProxy = NewObject<UCreateStructProxy>();
-	CreateStructProxy->AddToRoot();
-	CreateStructProxy->Init();
-	CreateStructProxy->DoImport();
-	CreateStructProxy->RemoveFromRoot();
+	if(!DockTab.IsValid())
+	{
+		FGlobalTabmanager::Get()->RegisterNomadTabSpawner(EasyJsonTableName, FOnSpawnTab::CreateRaw(this, &FEasyJsonEditorModule::OnSpawnPluginTab))
+		.SetDisplayName(LOCTEXT("FEasyJsonTabTitle", "EasyJson"))
+		.SetMenuType(ETabSpawnerMenuType::Hidden);
+	}
+	FGlobalTabmanager::Get()->TryInvokeTab(EasyJsonTableName);
 }
 
-void FEasyJsonEditorModule::CreateCustomStruct()
+void FEasyJsonEditorModule::OnTabClosed(TSharedRef<SDockTab> InTab)
 {
+	FGlobalTabmanager::Get()->UnregisterNomadTabSpawner(EasyJsonTableName);
+	DockTab.Reset();
 }
 
+TSharedRef<class SDockTab> FEasyJsonEditorModule::OnSpawnPluginTab(const class FSpawnTabArgs& InSpawnTabArgs)
+{
+	return SAssignNew(DockTab,SDockTab)
+		.TabRole(ETabRole::NomadTab)
+		.Label(LOCTEXT("EasyJsonTab", "Easy Json"))
+		.ToolTipText(LOCTEXT("EasyJsonTabTextToolTip", "Easy Json"))
+		.OnTabClosed(SDockTab::FOnTabClosedCallback::CreateRaw(this,&FEasyJsonEditorModule::OnTabClosed))
+		.Clipping(EWidgetClipping::ClipToBounds)
+		[
+			SNew(SEasyJsonImportWidget)
+		];
+	;
+}
 #undef LOCTEXT_NAMESPACE
 	
 IMPLEMENT_MODULE(FEasyJsonEditorModule, EasyJsonEditor)

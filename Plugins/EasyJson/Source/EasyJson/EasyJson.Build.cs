@@ -25,7 +25,7 @@ public class EasyJson : ModuleRules
 		PublicDependencyModuleNames.AddRange(
 			new string[]
 			{
-				"Core",
+				"Core", "Projects",
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -42,6 +42,7 @@ public class EasyJson : ModuleRules
 				"Json",
 				"BlueprintGraph",//EdGraphSchema_K2
 				"UnrealEd",// UStructFactory
+				"DesktopPlatform",//DesktopPlatformModule
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

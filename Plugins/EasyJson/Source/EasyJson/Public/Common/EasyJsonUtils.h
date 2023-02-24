@@ -37,6 +37,9 @@ public:
 	UFUNCTION(BlueprintCallable,CustomThunk,Category= "EasyJson | Common", meta=(CustomStructureParam = "InStruct",BlueprintInternalUseOnly="false"))
 	static bool EasySerialize(const int32& InStruct,FString& OutJsonString);
 
+	static TArray<FString> SaveFileDialog(const FString& DialogTitle, const FString& DefaultPath, const FString& DefaultFile, const FString& FileTypes, uint32 Flags);
+	static TArray<FString> OpenFileDialog(const FString& DialogTitle, const FString& DefaultPath, const FString& DefaultFile, const FString& FileTypes, uint32 Flags);
+
 private:
 	static bool HasGetTypeHash(const FName& PinType,UObject* ScriptStruct = nullptr);
 

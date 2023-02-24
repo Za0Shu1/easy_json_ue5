@@ -46,7 +46,7 @@ public class EasyJsonEditor : ModuleRules
 				"AssetRegistry",
 				"EasyJson",
 				"Json",
-				"JsonUtilities",
+				"JsonUtilities", "EditorStyle",
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

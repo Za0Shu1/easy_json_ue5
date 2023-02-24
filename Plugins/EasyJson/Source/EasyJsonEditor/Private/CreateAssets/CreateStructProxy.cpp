@@ -30,6 +30,8 @@
 #include "Serialization/JsonSerializer.h"
 
 // PLUGIN HEADER
+#include "IContentBrowserDataModule.h"
+#include "PackageTools.h"
 #include "Common/EasyJsonTypes.h"
 #include "Common/EasyJsonUtils.h"
 #include "JsonUtils/JsonPointer.h"
@@ -38,27 +40,54 @@ DEFINE_LOG_CATEGORY(LogEasyJsonCreateAssets);
 
 #define LOCTEXT_NAMESPACE "FEasyJsonModule"
 
-void UCreateStructProxy::Init(FString JsonFilePath)
+
+bool UCreateStructProxy::Init(TSharedPtr<FEasyJsonImportConfig> ImportSettings)
 {
-	// @TODO: Create a widget to located json file
-	if(JsonFilePath.IsEmpty())
+	if(ImportSettings.Get()->JsonFile.FilePath.IsEmpty())
 	{
-		JsonFilePath = IPluginManager::Get().FindPlugin("EasyJson")->GetBaseDir() / TEXT("Json") / JsonFileName + TEXT(".json");
+		UE_LOG(LogEasyJsonCreateAssets,Log,TEXT("No json file selected."));
+		return false;
 	}
 	
-	UE_LOG(LogEasyJsonCreateAssets,Log,TEXT("Select json file at : %s"),*JsonFilePath);
-	
-	if(!FPaths::FileExists(JsonFilePath))
+	if(!FPaths::FileExists(ImportSettings.Get()->JsonFile.FilePath))
 	{
 		UE_LOG(LogEasyJsonCreateAssets,Warning,TEXT("Can not find json file"));
+		return false;
 	}
 
-	if(!FFileHelper::LoadFileToString(OriginJsonString,*JsonFilePath))
+	if(!FFileHelper::LoadFileToString(OriginJsonString,*ImportSettings.Get()->JsonFile.FilePath))
 	{
 		UE_LOG(LogEasyJsonCreateAssets,Error,TEXT("Can not load json file to string"));
+		return false;
 	}
 
 	UE_LOG(LogEasyJsonCreateAssets,Log,TEXT(" \r\n%s"),*OriginJsonString);
+	
+	SavePath = ImportSettings.Get()->StructSavePath.Path;
+	switch (ImportSettings.Get()->AutoGenerateSubFolderName)
+	{
+	case EAutoGenerateFolderType::E_GUID:
+		SavePath /= FGuid::NewGuid().ToString();
+		break;
+	case EAutoGenerateFolderType::E_Timestamp:
+		SavePath /= FString::Printf(TEXT("%lld"),FDateTime::Now().ToUnixTimestamp());
+		break;
+	case EAutoGenerateFolderType::E_UserDefine:
+		if(!ImportSettings.Get()->CustomSubFolder.IsEmpty())
+		{
+			SavePath /= ImportSettings.Get()->CustomSubFolder;
+		}
+		break;
+		default:
+		break;
+	}
+	int32 FileNameStart = ImportSettings.Get()->JsonFile.FilePath.Find("/",ESearchCase::IgnoreCase,ESearchDir::FromEnd) + 1;
+	int32 FileNameEnd = ImportSettings.Get()->JsonFile.FilePath.Find(".json",ESearchCase::IgnoreCase,ESearchDir::FromEnd);
+	if(FileNameStart > 0 && FileNameEnd > FileNameStart)
+	{
+		JsonFileName = ImportSettings.Get()->JsonFile.FilePath.Mid(FileNameStart,FileNameEnd - FileNameStart);
+	}
+	return true;
 }
 
 void UCreateStructProxy::DoImport()
@@ -69,40 +98,6 @@ void UCreateStructProxy::DoImport()
 		return;
 	}
 
-	// test code
-	if (false)
-	{
-		FStructDescription InStruct;
-
-		const FContentBrowserModule& ContentBrowserModule = FModuleManager::LoadModuleChecked<FContentBrowserModule>("ContentBrowser");
-		IContentBrowserSingleton& ContentBrowserSingleton = ContentBrowserModule.Get();
-		const FString SavePath = ContentBrowserSingleton.GetCurrentPath().GetInternalPathString();
-
-		InStruct.AssetName = FName("Simple");
-		InStruct.PackageName = SavePath / InStruct.AssetName.ToString();
-	
-		FEdGraphPinType PinType;
-		FEdGraphTerminalType ValuePinType;
-		bool bValueType = UEasyJsonUtils::GenerateValuePinType(ValuePinType,EStructPinType::PC_Struct,FName(SavePath + "/TestStruct1.TestStruct1"));
-		if(!bValueType)
-		{
-			UE_LOG(LogTemp, Error, TEXT("Invalid ValuePinType."));
-			return;
-		}
-			
-		bool bResult = UEasyJsonUtils::GenerateStructPinType(PinType,EStructPinType::PC_String,FName(),EPinContainerType::Map,ValuePinType);
-		if(!bResult)
-		{
-			UE_LOG(LogTemp, Error, TEXT("Invalid PinType."));
-			return;
-		}
-	
-		InStruct.VariableInfo.Add("V1",PinType);
-	
-		FSoftObjectPath OutputFile;
-		GenerateStructFromDescription(InStruct,OutputFile);
-		return;
-	}
 	const TSharedRef< TJsonReader<> >& Reader = TJsonReaderFactory<>::Create(OriginJsonString);
 	TSharedPtr<FJsonObject> Object;
 	if (!(FJsonSerializer::Deserialize(Reader, /*out*/ Object) && Object.IsValid()))
@@ -110,6 +105,14 @@ void UCreateStructProxy::DoImport()
 		UE_LOG(LogEasyJsonCreateAssets, Error, TEXT("Input string can not parse to json object,with error code : %s"),*Reader->GetErrorMessage());
 	}
 
+	if (IContentBrowserDataModule* ContentBrowserDataModule = IContentBrowserDataModule::GetPtr())
+	{
+		if (UContentBrowserDataSubsystem* ContentBrowserData = ContentBrowserDataModule->GetSubsystem())
+		{
+			ContentBrowserData->CreateFolder(FName(SavePath));
+		}
+	}
+	
 	FSoftObjectPath StructSoftPath;
 	if(!CreateStructFromJsonObject(JsonFileName,Object,StructSoftPath))
 	{
@@ -121,15 +124,8 @@ void UCreateStructProxy::DoImport()
 bool UCreateStructProxy::CreateStructFromJsonObject(FString StructName, const TSharedPtr<FJsonObject>& InObject, FSoftObjectPath& OutStructSoftPath)
 {
 	FStructDescription StructInfo;
-
-	// get struct save path
-	const FContentBrowserModule& ContentBrowserModule = FModuleManager::LoadModuleChecked<FContentBrowserModule>("ContentBrowser");
-	IContentBrowserSingleton& ContentBrowserSingleton = ContentBrowserModule.Get();
-	const FString SavePath = ContentBrowserSingleton.GetCurrentPath().GetInternalPathString();
-
 	StructInfo.AssetName = FName(StructName);
 	StructInfo.PackageName = SavePath / StructName;
-
 
 	TMap<FString,TSharedPtr<FJsonValue>> JsonAttributes = InObject.Get()->Values;
 	for(auto attribute : JsonAttributes)
@@ -246,76 +242,74 @@ bool UCreateStructProxy::GeneratePinFromJsonValueType(TTuple<FString, TSharedPtr
 bool UCreateStructProxy::GenerateStructFromDescription(FStructDescription& InDescription, FSoftObjectPath& CreatedStructSoftPath)
 {
 	/**
-	 *Step 1 : Delete asset if already exists
+	 *Step 1 : Create Packahe
 	**/
-	if (DeleteAssetByPackageName(InDescription.PackageName))
+	UPackage* StructPackage = CreatePackage(*InDescription.PackageName);
+	if (!StructPackage)
 	{
-		UPackage* StructPackage = CreatePackage(*InDescription.PackageName);
-		if (!StructPackage)
-		{
-			UE_LOG(LogEasyJsonCreateAssets, Error, TEXT("Can not create package"));
-			return  false;
-		}
+		UE_LOG(LogEasyJsonCreateAssets, Error, TEXT("Can not create package"));
+		return  false;
+	}
+
+	/**
+	 *Step 2 : Create Struct
+	**/
+	UUserDefinedStruct* OutStruct = FStructureEditorUtils::CreateUserDefinedStruct(StructPackage, InDescription.AssetName, RF_Public | RF_Standalone | RF_Transactional);
+	if (!OutStruct)
+	{
+		UE_LOG(LogEasyJsonCreateAssets, Error, TEXT("Can not create UserDefinedStruct"));
+		return false;
+	}
+
+	/**
+	 *Step 3 : Register Asset
+	**/
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+	// register new asset,or we can not see in content browser
+	AssetRegistryModule.Get().AssetCreated(OutStruct);
+
+	for(auto variable : InDescription.VariableInfo)
+	{
 
 		/**
-		 *Step 2 : Create Asset
+		 *Step 4 : Add Variables
 		**/
-		UUserDefinedStruct* OutStruct = FStructureEditorUtils::CreateUserDefinedStruct(StructPackage, InDescription.AssetName, RF_Public | RF_Standalone | RF_Transactional);
-		if (!OutStruct)
+		if(FStructureEditorUtils::AddVariable(OutStruct, variable.Value))
 		{
-			UE_LOG(LogEasyJsonCreateAssets, Error, TEXT("Can not create UserDefinedStruct"));
-			return false;
-		}
-
-		/**
-		 *Step 3 : Register Asset
-		**/
-		FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
-		// register new asset,or we can not see in content browser
-		AssetRegistryModule.Get().AssetCreated(OutStruct);
-
-		for(auto variable : InDescription.VariableInfo)
-		{
-
 			/**
-			 *Step 4 : Add Variables
+			 *Step 5 : Rename Variables
 			**/
-			if(FStructureEditorUtils::AddVariable(OutStruct, variable.Value))
+			TArray<FStructVariableDescription> VarDescArray = FStructureEditorUtils::GetVarDesc(OutStruct);
+			if(!FStructureEditorUtils::RenameVariable(OutStruct, VarDescArray[VarDescArray.Num() - 1].VarGuid, variable.Key))
 			{
-				/**
-				 *Step 5 : Rename Variables
-				**/
-				TArray<FStructVariableDescription> VarDescArray = FStructureEditorUtils::GetVarDesc(OutStruct);
-				if(!FStructureEditorUtils::RenameVariable(OutStruct, VarDescArray[VarDescArray.Num() - 1].VarGuid, variable.Key))
-				{
-					UE_LOG(LogEasyJsonCreateAssets, Error, TEXT("Rename Variable Failed."));
-				}
-			}
-			else
-			{
-				UE_LOG(LogEasyJsonCreateAssets, Error, TEXT("Can not add variable to struct : %s."), *InDescription.AssetName.ToString());
+				UE_LOG(LogEasyJsonCreateAssets, Error, TEXT("Rename Variable Failed."));
 			}
 		}
-
-		/**
-		 *Step 6 : Remove Default Variable
-		**/
-
-		TArray<FStructVariableDescription> VarDescArray = FStructureEditorUtils::GetVarDesc(OutStruct);
-		if (VarDescArray.Num() > 0)
+		else
 		{
-			if (!FStructureEditorUtils::RemoveVariable(OutStruct, VarDescArray[0].VarGuid))
-			{
-				UE_LOG(LogTemp, Warning, TEXT("Member variable cannot be removed. User Defined Structure cannot be empty"));
-			}
+			UE_LOG(LogEasyJsonCreateAssets, Error, TEXT("Can not add variable to struct : %s."), *InDescription.AssetName.ToString());
 		}
+	}
 
-		/**
-		 *Step 7 : Save Asset
-		**/
-		UEditorAssetSubsystem* EditorAssetSubsystem = GEditor->GetEditorSubsystem<UEditorAssetSubsystem>();
-		EditorAssetSubsystem->SaveAsset(InDescription.PackageName, true);
-		
+	/**
+	 *Step 6 : Remove Default Variable
+	**/
+
+	TArray<FStructVariableDescription> VarDescArray = FStructureEditorUtils::GetVarDesc(OutStruct);
+	if (VarDescArray.Num() > 0)
+	{
+		if (!FStructureEditorUtils::RemoveVariable(OutStruct, VarDescArray[0].VarGuid))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Member variable cannot be removed. User Defined Structure cannot be empty"));
+		}
+	}
+
+	/**
+	 *Step 7 : Save Asset
+	**/
+	UEditorAssetSubsystem* EditorAssetSubsystem = GEditor->GetEditorSubsystem<UEditorAssetSubsystem>();
+	if(EditorAssetSubsystem->SaveAsset(InDescription.PackageName, true))
+	{
 		InDescription.bAlreadyCreated = true;
 		CreatedStructSoftPath = FSoftObjectPath(OutStruct);
 		UE_LOG(LogEasyJsonCreateAssets, Warning, TEXT("Struct{%s} created at : %s."),*InDescription.AssetName.ToString(),*CreatedStructSoftPath.ToString());
@@ -356,17 +350,23 @@ FString UCreateStructProxy::GetJsonTypeNameString(EJson JsonType)
 
 bool UCreateStructProxy::DeleteAssetByPackageName(FString PackageName) const
 {
-	// @ TODO: check refrences for package, if there is some refrence to this package,we can't delete it
 	if (UObject* DeleteObj = FindPackage(nullptr, *PackageName))
 	{
-		// FAssetDeleteModel DeleteTemp({DeleteObj});
-		// DeleteTemp.DoDelete();
+		bool bIsReferenced = false;
+		bool bIsReferencedByUndo = false;
+		ObjectTools::GatherObjectReferencersForDeletion(DeleteObj, bIsReferenced, bIsReferencedByUndo);
+		if(bIsReferenced)
+		{
+			FText DialogText = FText::Format(LOCTEXT("CannotDeleteAsset","Can not Delete Asset : {0} , please check and modify asset manually."),FText::FromString(PackageName));
+			FMessageDialog::Open(EAppMsgType::Ok,DialogText);
+			return false;
+		}
 
 		TArray<UObject*> AssetsToDelete;
 		AssetsToDelete.Add(DeleteObj);
 		if(ObjectTools::ForceDeleteObjects(AssetsToDelete,false) != AssetsToDelete.Num())
 		{
-			FText DialogText = FText::Format(LOCTEXT("CannotDeleteAsset","Can not Delete Asset : {0} "),FText::FromString(PackageName));
+			FText DialogText = FText::Format(LOCTEXT("DeleteAssetFailed","Delete Asset Failed: {0} "),FText::FromString(PackageName));
 			FMessageDialog::Open(EAppMsgType::Ok,DialogText);
 			return false;
 		}

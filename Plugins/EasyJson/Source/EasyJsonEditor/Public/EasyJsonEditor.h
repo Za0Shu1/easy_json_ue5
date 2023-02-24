@@ -16,8 +16,13 @@ public:
 	void AddToolbarExtension(FToolBarBuilder& Builder);
 	void OnImportButtonClick();
 
+private:
+	void OnTabClosed(TSharedRef<SDockTab> InTab);
+	TSharedRef<class SDockTab> OnSpawnPluginTab(const class FSpawnTabArgs& InSpawnTabArgs);
 
-	void CreateCustomStruct();
+public:
+
 private:
 	TSharedPtr<class FUICommandList> PluginCommands;
+	TSharedPtr<SDockTab> DockTab;
 };

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Interfaces/IPluginManager.h"
 #include "EasyJsonTypes.generated.h"
 
 /**
@@ -51,6 +52,44 @@ public:
 		VariableInfo({}),
 		bAlreadyCreated(false)
 	{
+	}
+};
+
+UENUM(BlueprintType)
+enum class EAutoGenerateFolderType : uint8
+{
+	E_GUID			UMETA(DisplayName="GUID"),
+	E_Timestamp		UMETA(DisplayName="Timestamp"),
+	E_UserDefine	UMETA(DisplayName="UserDefine")
+};
+
+
+USTRUCT(BlueprintType)
+struct FEasyJsonImportConfig
+{
+	GENERATED_BODY()
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "Import From",meta = (RelativeToGameContentDir))
+	FFilePath JsonFile;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "Save To" ,meta = (RelativeToGameContentDir, LongPackageName))
+	FDirectoryPath StructSavePath;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "Save To")
+	EAutoGenerateFolderType AutoGenerateSubFolderName = EAutoGenerateFolderType::E_Timestamp;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "Save To" ,meta=(EditCondition="AutoGenerateSubFolderName==EAutoGenerateFolderType::E_UserDefine"))
+	FString CustomSubFolder = "";
+
+	FEasyJsonImportConfig()
+	{
+		
+	}
+	
+	FEasyJsonImportConfig(FString DefaultSavePath)
+	{
+		JsonFile.FilePath = IPluginManager::Get().FindPlugin("EasyJson")->GetBaseDir() / TEXT("Json/Simple.json");
+		StructSavePath.Path = DefaultSavePath;
 	}
 };
 
