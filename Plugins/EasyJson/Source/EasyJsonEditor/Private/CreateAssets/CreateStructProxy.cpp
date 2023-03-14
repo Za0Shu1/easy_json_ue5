@@ -33,7 +33,7 @@
 #include "IContentBrowserDataModule.h"
 #include "PackageTools.h"
 #include "Common/EasyJsonTypes.h"
-#include "Common/EasyJsonUtils.h"
+#include "Common/EasyJsonEditorUtils.h"
 #include "JsonUtils/JsonPointer.h"
 
 DEFINE_LOG_CATEGORY(LogEasyJsonCreateAssets);
@@ -146,7 +146,7 @@ bool UCreateStructProxy::CreateStructFromJsonObject(FString StructName, const TS
 		}
 		else
 		{
-			if(UEasyJsonUtils::GenerateStructPinType(Pin,PinMainType,SubStructPath,ContainerType,TerminalType))
+			if(UEasyJsonEditorUtils::GenerateStructPinType(Pin,PinMainType,SubStructPath,ContainerType,TerminalType))
 			{
 				StructInfo.VariableInfo.Add(VariableName,Pin);
 			}

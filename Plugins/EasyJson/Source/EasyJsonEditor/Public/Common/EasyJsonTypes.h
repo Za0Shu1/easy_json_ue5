@@ -94,7 +94,7 @@ public:
 };
 
 UCLASS()
-class EASYJSON_API UEasyJsonTypes : public UObject
+class EASYJSONEDITOR_API UEasyJsonTypes : public UObject
 {
 public:
 	GENERATED_BODY()

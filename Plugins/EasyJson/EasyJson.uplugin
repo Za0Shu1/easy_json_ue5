@@ -10,7 +10,7 @@
 	"DocsURL": "",
 	"MarketplaceURL": "",
 	"SupportURL": "",
-	"CanContainContent": true,
+	"CanContainContent": true,"Type": "Editor",
 	"IsBetaVersion": false,
 	"IsExperimentalVersion": false,
 	"Installed": false,
@@ -18,12 +18,14 @@
 		{
 			"Name": "EasyJson",
 			"Type": "Runtime",
-			"LoadingPhase": "Default"
+			"LoadingPhase": "PreLoadingScreen",
+			"WhitelistPlatforms": [ "Win64", "Android", "Mac", "IOS", "Linux" ]
 		},
 		{
 			"Name": "EasyJsonEditor",
 			"Type": "Editor",
-			"LoadingPhase": "PreDefault"
+			"LoadingPhase": "PreDefault",
+			"WhitelistPlatforms": [ "Win64", "Android", "Mac", "IOS", "Linux" ]
 		}
 	]
 }

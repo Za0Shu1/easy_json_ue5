@@ -75,3 +75,4 @@ DerivedDataCache/*
 *.gitignore
 .idea/
 Platforms/
+Windows/
