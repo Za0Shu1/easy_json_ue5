@@ -3,6 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Chaos/AABB.h"
+#include "Chaos/AABB.h"
 #include "Common/EasyJsonTypes.h"
 #include "Serialization/JsonTypes.h"
 #include "CreateStructProxy.generated.h"

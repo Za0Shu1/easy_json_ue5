@@ -40,19 +40,18 @@ public class EasyJsonEditor : ModuleRules
 				"SlateCore",
 				"LevelEditor",//Extent Editor
 				"Projects",// GetPluginInfomation
-				"UnrealEd",// UStructFactory
 				"ContentBrowser",
 				"ContentBrowserData",
 				"AssetRegistry",
+                "UnrealEd",// UStructFactory
 				"EasyJson",
 				"Json",
-				"JsonUtilities", 
+				"JsonUtilities",
 				"EditorStyle",
-				"BlueprintGraph",//EdGraphSchema_K2
-				"DesktopPlatform",//DesktopPlatformModule
+                "BlueprintGraph",//EdGraphSchema_K2
 				// ... add private dependencies that you statically link with here ...	
 			}
-			);
+            );
 		
 		
 		DynamicallyLoadedModuleNames.AddRange(

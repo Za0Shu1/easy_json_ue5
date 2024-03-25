@@ -40,6 +40,7 @@ public class EasyJson : ModuleRules
 				"SlateCore",
 				"JsonUtilities",
 				"Json",
+				"DesktopPlatform",//DesktopPlatformModule
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
