@@ -5,6 +5,8 @@
 #include "EasyJsonCommand.h"
 #include "LevelEditor.h"
 #include "SEasyJsonImportWidget.h"
+#include "Framework/MultiBox/MultiBoxBuilder.h"
+#include "Widgets/Docking/SDockTab.h"
 #include "CreateAssets/CreateStructProxy.h"
 
 #define LOCTEXT_NAMESPACE "FEasyJsonEditorModule"

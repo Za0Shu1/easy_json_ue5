@@ -11,6 +11,7 @@
 #include "Common/EasyJsonTypes.h"
 #include "CreateAssets/CreateStructProxy.h"
 #include "Kismet/KismetTextLibrary.h"
+#include "Widgets/Input/SButton.h"
 
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 #define LOCTEXT_NAMESPACE "SEasyJsonImport"

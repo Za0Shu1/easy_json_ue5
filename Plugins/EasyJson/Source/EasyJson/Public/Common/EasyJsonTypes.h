@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Interfaces/IPluginManager.h"
+#include "EdGraph/EdGraphPin.h"
 #include "EasyJsonTypes.generated.h"
 
 /**
