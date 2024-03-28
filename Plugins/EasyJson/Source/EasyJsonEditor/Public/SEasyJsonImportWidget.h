@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Widgets/SCompoundWidget.h"
+#include "IStructureDetailsView.h"
 #include "Common/EasyJsonTypes.h"
 
 /**

@@ -7,6 +7,7 @@ public class EasyJsonEditor : ModuleRules
 	public EasyJsonEditor(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+		bEnableUndefinedIdentifierWarnings = false;
 		
 		PublicIncludePaths.AddRange(
 			new string[] {

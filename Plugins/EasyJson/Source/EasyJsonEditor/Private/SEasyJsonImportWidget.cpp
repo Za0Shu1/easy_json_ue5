@@ -12,6 +12,7 @@
 #include "CreateAssets/CreateStructProxy.h"
 #include "Kismet/KismetTextLibrary.h"
 #include "Widgets/Input/SButton.h"
+#include "PropertyEditorModule.h"
 
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 #define LOCTEXT_NAMESPACE "SEasyJsonImport"
